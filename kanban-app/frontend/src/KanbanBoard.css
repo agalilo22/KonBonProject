@@ -1,0 +1,97 @@
+.kanban-container {
+    padding: 20px;
+  }
+  
+  .task-inputs {
+    margin-bottom: 20px;
+  }
+  
+  .task-inputs input[type="text"] {
+    padding: 8px;
+    margin-right: 10px;
+    width: 200px;
+  }
+  
+  .task-inputs input[type="file"] {
+    margin-right: 10px;
+  }
+  
+  .task-inputs button {
+    padding: 8px 16px;
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .task-inputs button:hover {
+    background-color: #45a049;
+  }
+  
+  .kanban-columns {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap; /* Makes columns wrap on smaller screens */
+  }
+  
+  .kanban-column {
+    border: 1px solid #ccc;
+    padding: 10px;
+    width: 300px;
+    min-height: 200px;
+    background-color: #f0f0f0;
+  }
+  
+  .kanban-column h2 {
+    margin: 0 0 10px;
+    text-align: center;
+  }
+  
+  .kanban-task {
+    padding: 8px;
+    margin: 4px 0;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  
+  .kanban-task a {
+    color: #007bff;
+    text-decoration: none;
+  }
+  
+  .kanban-task a:hover {
+    text-decoration: underline;
+  }
+  
+  .delete-btn {
+    padding: 4px 8px;
+    background-color: #ff4444;
+    color: white;
+    border: none;
+    cursor: pointer;
+    align-self: flex-end;
+  }
+  
+  .delete-btn:hover {
+    background-color: #cc0000;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .kanban-column {
+      width: 100%;
+      min-width: 250px; /* Ensures columns don’t get too narrow */
+    }
+  
+    .task-inputs input[type="text"] {
+      width: 100%;
+      margin-bottom: 10px;
+    }
+  
+    .task-inputs input[type="file"] {
+      margin-bottom: 10px;
+    }
+  }
