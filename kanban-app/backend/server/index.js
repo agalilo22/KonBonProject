@@ -3,6 +3,7 @@ const { OAuth2Client } = require("google-auth-library");
 const mongoose = require("mongoose");
 const AWS = require("aws-sdk");
 require("dotenv").config();
+const PORT = process.env.PORT || 3001;
 
 const app = express();
 app.use(express.json());
@@ -120,4 +121,4 @@ app.delete("/tasks/:id", async (req, res) => {
 });
 
 // Start Server
-app.listen(3001, () => console.log("Server running on port 3001"));
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
