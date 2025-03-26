@@ -6,9 +6,12 @@ import "./App.css";
 function App() {
   const user = JSON.parse(localStorage.getItem("user"));
 
+  // Define API_BASE_URL here for App.js API calls
+  const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3001";
+
   const handleLogin = async (response) => {
     try {
-      const { data } = await axios.post("http://localhost:3001/auth/google", {
+      const { data } = await axios.post(`${API_BASE_URL}/auth/google`, {
         token: response.credential,
       });
       localStorage.setItem("user", JSON.stringify(data.user));
@@ -23,7 +26,7 @@ function App() {
       <header className="App-header">
         <h1>Kanban Productivity App</h1>
         {user ? (
-          <KanbanBoard /> // This now uses the imported KanbanBoard
+          <KanbanBoard /> // KanbanBoard has its own API_BASE_URL
         ) : (
           <GoogleOAuthProvider clientId="975747761924-bfmcvsft1ekf1ocn31f2eecn9jgqrk4q.apps.googleusercontent.com">
             <GoogleLogin
