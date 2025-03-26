@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import axios from "axios";
-import "./KanbanBoard.css"; // New CSS file for styling
+import "./KanbanBoard.css";
 
 function KanbanBoard() {
     const [columns, setColumns] = useState({
@@ -11,33 +11,42 @@ function KanbanBoard() {
     });
     const [newTask, setNewTask] = useState("");
     const [file, setFile] = useState(null);
-    const user = JSON.parse(localStorage.getItem("user"));
+    const [user] = useState(() => JSON.parse(localStorage.getItem("user"))); // Stable user
+    const API_BASE_URL = process.env.REACT_APP_API_URL || "https://konbonprojectbackend-production.up.railway.app";
 
-    // Base URL for API calls (configurable for deployment)
-    const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:3001";
-
-    // Fetch tasks on mount or when user changes
-    useEffect(() => {
-        if (user) {
+    // Memoize fetchTasks to prevent redefinition
+    const fetchTasks = useCallback(() => {
+        if (user && user.id) {
             axios
                 .get(`${API_BASE_URL}/tasks/${user.id}`)
                 .then((res) => {
-                    const tasks = res.data;
+                    const tasks = res.data || [];
+                    console.log("Fetched tasks:", tasks);
                     setColumns({
                         todo: { name: "To Do", items: tasks.filter((t) => t.status === "todo") },
                         inProgress: { name: "In Progress", items: tasks.filter((t) => t.status === "inProgress") },
                         done: { name: "Done", items: tasks.filter((t) => t.status === "done") },
                     });
                 })
-                .catch((err) => console.error("Failed to fetch tasks:", err));
+                .catch((err) => {
+                    console.error("Failed to fetch tasks:", err.response?.data || err);
+                    setColumns({
+                        todo: { name: "To Do", items: [] },
+                        inProgress: { name: "In Progress", items: [] },
+                        done: { name: "Done", items: [] },
+                    });
+                });
         }
-    }, [user, API_BASE_URL]);
+    }, [user, API_BASE_URL]); // Dependencies are stable
 
-    // Add a new task
+    // Fetch tasks only on mount or when user changes
+    useEffect(() => {
+        fetchTasks();
+    }, [fetchTasks]); // fetchTasks is memoized, so this won't loop
+
     const addTask = async () => {
         if (!newTask || !user) return;
-
-        const formData = { userId: user.id, title: newTask };
+        const formData = { userId: user.id, title: newTask, status: "todo" };
         try {
             if (file) {
                 const reader = new FileReader();
@@ -55,40 +64,22 @@ function KanbanBoard() {
                 fetchTasks();
             }
         } catch (error) {
-            console.error("Failed to add task:", error);
+            console.error("Failed to add task:", error.response?.data || error);
         }
     };
 
-    // Delete a task
     const deleteTask = async (taskId) => {
         try {
             await axios.delete(`${API_BASE_URL}/tasks/${taskId}`);
-            fetchTasks(); // Refresh tasks after deletion
+            fetchTasks();
         } catch (error) {
-            console.error("Failed to delete task:", error);
+            console.error("Failed to delete task:", error.response?.data || error);
         }
     };
 
-    // Helper to fetch tasks
-    const fetchTasks = () => {
-        if (user) {
-            axios
-                .get(`${API_BASE_URL}/tasks/${user.id}`)
-                .then((res) => {
-                    const tasks = res.data;
-                    setColumns({
-                        todo: { name: "To Do", items: tasks.filter((t) => t.status === "todo") },
-                        inProgress: { name: "In Progress", items: tasks.filter((t) => t.status === "inProgress") },
-                        done: { name: "Done", items: tasks.filter((t) => t.status === "done") },
-                    });
-                })
-                .catch((err) => console.error("Failed to fetch tasks:", err));
-        }
-    };
-
-    // Handle drag-and-drop
     const onDragEnd = async (result) => {
         const { source, destination } = result;
+        console.log("Drag result:", result);
         if (!destination) return;
 
         const sourceCol = columns[source.droppableId];
@@ -111,9 +102,10 @@ function KanbanBoard() {
                 await axios.put(`${API_BASE_URL}/tasks/${movedItem._id}`, {
                     status: destination.droppableId,
                 });
+                console.log("Task moved successfully:", movedItem);
             } catch (error) {
-                console.error("Failed to update task status:", error);
-                fetchTasks(); // Revert UI on failure
+                console.error("Failed to update task status:", error.response?.data || error);
+                fetchTasks();
             }
         }
     };

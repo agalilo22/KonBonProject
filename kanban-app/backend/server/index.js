@@ -3,8 +3,11 @@ const { OAuth2Client } = require("google-auth-library");
 const mongoose = require("mongoose");
 const AWS = require("aws-sdk");
 require("dotenv").config();
+const cors = require("cors");
+
 
 const app = express();
+app.use(cors({ origin: "https://konbonproject-production.up.railway.app" })); // Update to frontend URL after deployment
 app.use(express.json());
 
 // Add a root route for testing
