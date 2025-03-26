@@ -3,10 +3,14 @@ const { OAuth2Client } = require("google-auth-library");
 const mongoose = require("mongoose");
 const AWS = require("aws-sdk");
 require("dotenv").config();
-const PORT = process.env.PORT || 3001;
 
 const app = express();
 app.use(express.json());
+
+// Add a root route for testing
+app.get("/", (req, res) => {
+    res.send("Kanban Backend is running!");
+});
 
 // Google OAuth Setup
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -15,7 +19,6 @@ app.post("/auth/google", async (req, res) => {
     try {
         const { token } = req.body;
         if (!token) return res.status(400).json({ error: "Token is required" });
-
         const ticket = await client.verifyIdToken({
             idToken: token,
             audience: process.env.GOOGLE_CLIENT_ID,
@@ -29,10 +32,9 @@ app.post("/auth/google", async (req, res) => {
 });
 
 // MongoDB Setup
-mongoose.connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-}).then(() => console.log("Connected to MongoDB"))
+mongoose
+    .connect(process.env.MONGO_URI)
+    .then(() => console.log("Connected to MongoDB"))
     .catch((err) => console.error("MongoDB connection failed:", err));
 
 const taskSchema = new mongoose.Schema({
@@ -70,7 +72,6 @@ app.post("/tasks", async (req, res) => {
         if (!userId || !title) {
             return res.status(400).json({ error: "userId and title are required" });
         }
-
         if (file) {
             const uploadParams = {
                 Bucket: process.env.S3_BUCKET,
@@ -80,7 +81,6 @@ app.post("/tasks", async (req, res) => {
             const result = await s3.upload(uploadParams).promise();
             fileUrl = result.Location;
         }
-
         const task = new Task({ userId, title, fileUrl });
         await task.save();
         res.status(201).json(task);
@@ -92,15 +92,9 @@ app.post("/tasks", async (req, res) => {
 
 app.put("/tasks/:id", async (req, res) => {
     const { status } = req.body;
-
     try {
         if (!status) return res.status(400).json({ error: "Status is required" });
-
-        const task = await Task.findByIdAndUpdate(
-            req.params.id,
-            { status },
-            { new: true }
-        );
+        const task = await Task.findByIdAndUpdate(req.params.id, { status }, { new: true });
         if (!task) return res.status(404).json({ error: "Task not found" });
         res.json(task);
     } catch (error) {
@@ -121,4 +115,5 @@ app.delete("/tasks/:id", async (req, res) => {
 });
 
 // Start Server
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
