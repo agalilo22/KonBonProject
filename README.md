@@ -102,3 +102,6 @@ Create a .env file:
 - Copy
 npm start
 - Runs at http://localhost:3001.
+
+**Deployed App**
+- KonBon [https://konbonproject-production.up.railway.app/](url)
