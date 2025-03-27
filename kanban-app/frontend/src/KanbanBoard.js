@@ -11,10 +11,9 @@ function KanbanBoard() {
     });
     const [newTask, setNewTask] = useState("");
     const [file, setFile] = useState(null);
-    const [user] = useState(() => JSON.parse(localStorage.getItem("user"))); // Stable user
+    const [user] = useState(() => JSON.parse(localStorage.getItem("user")));
     const API_BASE_URL = process.env.REACT_APP_API_URL || "https://konbonprojectbackend-production.up.railway.app";
 
-    // Memoize fetchTasks to prevent redefinition
     const fetchTasks = useCallback(() => {
         if (user && user.id) {
             axios
@@ -37,32 +36,28 @@ function KanbanBoard() {
                     });
                 });
         }
-    }, [user, API_BASE_URL]); // Dependencies are stable
+    }, [user, API_BASE_URL]);
 
-    // Fetch tasks only on mount or when user changes
     useEffect(() => {
+        console.log("KanbanBoard component mounted—React is running!");
         fetchTasks();
-    }, [fetchTasks]); // fetchTasks is memoized, so this won't loop
+    }, [fetchTasks]);
 
     const addTask = async () => {
         if (!newTask || !user) return;
-        const formData = { userId: user.id, title: newTask, status: "todo" };
+        const formData = new FormData();
+        formData.append("userId", user.id);
+        formData.append("title", newTask);
+        formData.append("status", "todo");
+        if (file) formData.append("file", file); // Send file directly
+
         try {
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = async () => {
-                    formData.file = { name: file.name, data: reader.result.split(",")[1] };
-                    await axios.post(`${API_BASE_URL}/tasks`, formData);
-                    setNewTask("");
-                    setFile(null);
-                    fetchTasks();
-                };
-                reader.readAsDataURL(file);
-            } else {
-                await axios.post(`${API_BASE_URL}/tasks`, formData);
-                setNewTask("");
-                fetchTasks();
-            }
+            await axios.post(`${API_BASE_URL}/tasks`, formData, {
+                headers: { "Content-Type": "multipart/form-data" },
+            });
+            setNewTask("");
+            setFile(null);
+            fetchTasks();
         } catch (error) {
             console.error("Failed to add task:", error.response?.data || error);
         }
@@ -129,7 +124,7 @@ function KanbanBoard() {
                                 <div
                                     ref={provided.innerRef}
                                     {...provided.droppableProps}
-                                    className="kanban-column"
+                                    className={`kanban-column ${colId}-column`}
                                 >
                                     <h2>{column.name}</h2>
                                     {column.items.map((item, index) => (

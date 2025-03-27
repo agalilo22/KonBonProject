@@ -2,13 +2,14 @@ const express = require("express");
 const { OAuth2Client } = require("google-auth-library");
 const mongoose = require("mongoose");
 const AWS = require("aws-sdk");
+const multer = require("multer"); // Added for file uploads
 require("dotenv").config();
 const cors = require("cors");
 
-
 const app = express();
-app.use(cors({ origin: "https://konbonproject-production.up.railway.app" })); // Update to frontend URL after deployment
-app.use(express.json());
+app.use(cors({ origin: "https://konbonproject-production.up.railway.app" }));
+app.use(express.json({ limit: "15mb" })); // Increase JSON limit to 15 MB
+app.use(express.urlencoded({ limit: "15mb", extended: true })); // For form data
 
 // Add a root route for testing
 app.get("/", (req, res) => {
@@ -56,6 +57,12 @@ AWS.config.update({
 });
 const s3 = new AWS.S3();
 
+// Multer Setup for File Uploads
+const upload = multer({
+    limits: { fileSize: 15 * 1024 * 1024 }, // 15 MB limit (15,360 KB)
+    storage: multer.memoryStorage(), // Store in memory, then upload to S3
+});
+
 // Task Routes
 app.get("/tasks/:userId", async (req, res) => {
     try {
@@ -67,24 +74,25 @@ app.get("/tasks/:userId", async (req, res) => {
     }
 });
 
-app.post("/tasks", async (req, res) => {
-    const { userId, title, file } = req.body;
+app.post("/tasks", upload.single("file"), async (req, res) => {
+    const { userId, title, status } = req.body;
     let fileUrl = "";
 
     try {
         if (!userId || !title) {
             return res.status(400).json({ error: "userId and title are required" });
         }
-        if (file) {
+        if (req.file) {
             const uploadParams = {
                 Bucket: process.env.S3_BUCKET,
-                Key: `${Date.now()}-${file.name}`,
-                Body: Buffer.from(file.data, "base64"),
+                Key: `${Date.now()}-${req.file.originalname}`,
+                Body: req.file.buffer, // Use buffer directly from memory
+                ContentType: req.file.mimetype, // Preserve file type (e.g., image/jpeg)
             };
             const result = await s3.upload(uploadParams).promise();
             fileUrl = result.Location;
         }
-        const task = new Task({ userId, title, fileUrl });
+        const task = new Task({ userId, title, status: status || "todo", fileUrl });
         await task.save();
         res.status(201).json(task);
     } catch (error) {
