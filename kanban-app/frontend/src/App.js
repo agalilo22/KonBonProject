@@ -39,7 +39,7 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <h1>Kanban Productivity App</h1>
+        <h1>Kanban Board</h1>
         {user ? <KanbanBoard /> : (
           <GoogleOAuthProvider clientId="975747761924-bfmcvsft1ekf1ocn31f2eecn9jgqrk4q.apps.googleusercontent.com">
             <GoogleLogin

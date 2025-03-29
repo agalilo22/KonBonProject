@@ -111,9 +111,13 @@ function KanbanBoard() {
                 <input
                     value={newTask}
                     onChange={(e) => setNewTask(e.target.value)}
-                    placeholder="Enter task title"
+                    placeholder="What needs to be done?"
+                    className="task-title-input"
                 />
-                <input type="file" onChange={(e) => setFile(e.target.files[0])} />
+                <div className="file-upload-section">
+                    <input type="file" onChange={(e) => setFile(e.target.files[0])} />
+                </div>
+                <p className="file-upload-note">Max file size: 15 MB</p> {/* Moved here */}
                 <button onClick={addTask}>Add Task</button>
             </div>
             <DragDropContext onDragEnd={onDragEnd}>
